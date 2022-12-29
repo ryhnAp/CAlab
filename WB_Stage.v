@@ -1,0 +1,11 @@
+`timescale 1ns/1ns
+
+module WB_Stage(
+  input mem_read,
+  input [31:0] ALU_result, MEM_result,
+  output [31:0] out_result
+);
+
+  MUX #32 mux(ALU_result, MEM_result, mem_read, out_result);
+  
+endmodule
