@@ -1,13 +1,13 @@
 `timescale 1ns/1ns
 
-module ARM(input clk, rst);
+module ARM(input clk, rst, forward_en);
 
   wire branch, hazard, one_input, two_input;
   wire regWrite, memRead_ID, memWrite_ID, regWrite_ID, branch_ID, s_ID ,immediate_ID;
   wire memRead_EXEC, memWrite_EXEC, regWrite_EXEC, s_EXEC, ALU_carry_in, immediate_EXEC;
   wire regWrite_MEM, memRead_MEM, memWrite_MEM, memRead_WB;
 
-  wire[1:0] sel_src1, sel_src2;
+  wire[1:0] forwardA, forwardB, sel_src1, sel_src2;
 
   wire [3:0] WB_destination, destReg_ID, destReg_EXEC, destReg_MEM, first_input, second_input;
   wire [3:0] statusRegs, ALU_statusBits, EXE_command_ID, EXE_command_EXEC;
@@ -37,7 +37,7 @@ module ARM(input clk, rst);
                        destReg_EXEC, shift_operand_EXEC, s_imm_EXEC, PC_EXEC, Val_Rn_EXEC, Val_Rm_EXEC, 
                        Inst_EXEC, src1_reg, src2_reg);
   
-  EXE_Stage EXE_Stage(clk, rst, ALU_result_MEM, WB_data, 1'b0, 1'b0, EXE_command_EXEC, memRead_EXEC, memWrite_EXEC, immediate_EXEC, ALU_carry_in,
+  EXE_Stage EXE_Stage(clk, rst, ALU_result_MEM, WB_data, sel_src1, sel_src2, EXE_command_EXEC, memRead_EXEC, memWrite_EXEC, immediate_EXEC, ALU_carry_in,
             PC_EXEC, Val_Rn_EXEC, Val_Rm_EXEC, shift_operand_EXEC, s_imm_EXEC,
             ALU_result_EXEC, branch_address, ALU_statusBits, ID_Val_Rm_EXEC);
             
@@ -54,8 +54,12 @@ module ARM(input clk, rst);
   WB_Stage WB_Stage(memRead_WB, ALU_result_WB, memory_result_WB, WB_data);
 
   Hazard_Unit hazard_unit(regWrite_EXEC, regWrite_MEM, two_input,
-                      	 memRead_EXEC, first_input, second_input, destReg_EXEC,
+                      	 forward_en, memRead_EXEC, first_input, second_input, destReg_EXEC,
                       	 destReg_MEM, hazard);
+      
+  Forwarding_Unit forwarding_unit(regWrite_MEM, regWrite, forward_en,
+    src1_reg, src2_reg, destReg_MEM, WB_destination,
+    sel_src1, sel_src2);
 
   Status_Register status_register(clk, rst, s_EXEC, ALU_statusBits, statusRegs);
 endmodule
