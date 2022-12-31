@@ -303,6 +303,6 @@ inout	[35:0]	GPIO_0;					//	GPIO Connection 0
 inout	[35:0]	GPIO_1;					//	GPIO Connection 1
 
 	
-ARMM armm(CLOCK_50, SW[0]);	
+ARMM armm(CLOCK_50, SW[0], SW[1]);	
 	
 endmodule

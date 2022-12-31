@@ -21,8 +21,12 @@ module EXE_Stage(
   assign op1 = Val_Rn;
   Adder adder(PC, {{(6){Signed_imm_24[23]}}, Signed_imm_24, 2'b00}, Br_addr);
   assign mem_en = MEM_R_EN | MEM_W_EN;
-  Val2Generator val2generator(shift_operand, imm, mem_en, Val_Rm, op2);
-  ALU alu(Val_Rn, op2, SR, exe_cmd, ALU_result, status);
+  Val2Generator val2generator(shift_operand, imm, mem_en, mux32_2_out, op2);
+  ALU alu(mux32_1_out, op2, SR, exe_cmd, ALU_result, status);
  
-  assign Val_Rm_EXEC = Val_Rm;
+  //Forwarding
+  MUX3 #32 mux31(op1, ALU_MEM_Val, WB_Val, Sel_src1, mux32_1_out);
+  MUX3 #32 mux32(Val_Rm, ALU_MEM_Val, WB_Val, Sel_src2, mux32_2_out);	
+  
+  assign Val_Rm_EXEC = mux32_2_out;
 endmodule
