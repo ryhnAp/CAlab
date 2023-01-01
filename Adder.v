@@ -1,10 +1,14 @@
 `timescale 1ns/1ns
-
 module Adder(
-  input[31:0] A, B,
-  output[31:0] sum
+  left,
+  right,
+  sum
 );
+  parameter size = 32;
 
-  assign sum = A + B;
+  input [size-1 : 0] left, right;
+  output [size-1 : 0] sum;
+
+  assign sum = left + right;
+
 endmodule
-

@@ -1,83 +1,109 @@
 `timescale 1ns/1ns
-
 module Control_Unit(
-  input S,
-  input [1:0] mode,
-  input [3:0] opcode,
-  output one_input,
-  output [8:0] controllerOutput
+  S,
+  mode,
+  opcode,
+  one_input,
+  controllerOutput
 );
+  input S;
+  input [1 : 0] mode;
+  input [3 : 0] opcode;
+  output one_input;
+  output [8 : 0] controllerOutput;
 
-  reg regWrite, branch, memRead, memWrite;
-  reg[3:0] ALU_command;
+  parameter [1 : 0]
+      COMPUTE=2'b00, MEMORY=2'b01, BRANCH=2'b10;
+  parameter [3 : 0] 
+      MOV=4'b1101, 
+      MVN=4'b1111, 
+      ADD=4'b0100, 
+      ADC=4'b0101, 
+      SUB=4'b0010, 
+      SBC=4'b0110, 
+      AND=4'b0000, 
+      ORR=4'b1100, 
+      EOR=4'b0001, 
+      CMP=4'b1010, 
+      TST=4'b1000, 
+      LDR_STR=4'b0100;
+
+  reg WB_enable, branch_enable, mem_read, mem_write;
+  reg [3 : 0] alu_exe_cmd; //ALU execute command
   
   always @(*) begin
-    {ALU_command, memRead, memWrite, regWrite, branch} = 8'd0;
-
+    {alu_exe_cmd, WB_enable, branch_enable, mem_read, mem_write} = 0;
     case(mode)
-      2'b01: begin
-        if(S) begin  // LDR
-          ALU_command = 4'b0010;
-          memRead = 1'b1;
-          regWrite = 1'b1;
+      COMPUTE: 
+      begin
+        case(opcode)
+        MOV: 
+        begin
+          WB_enable = 1;
+          alu_exe_cmd = 4'b0001;
         end
-        else begin   // STR
-          ALU_command = 4'b0010;
-          memWrite = 1'b1;
+        MVN: 
+        begin
+          WB_enable = 1;
+          alu_exe_cmd = 4'b1001;
         end
-    end
+        ADD: 
+        begin
+          WB_enable = 1;
+          alu_exe_cmd = 4'b0010;
+        end
+        ADC: 
+        begin
+          WB_enable = 1;
+          alu_exe_cmd = 4'b0011;
+        end
+        SUB: 
+        begin
+          WB_enable = 1;
+          alu_exe_cmd = 4'b0100;
+        end
+        SBC: 
+        begin
+          WB_enable = 1;
+          alu_exe_cmd = 4'b0101;
+        end
+        AND: 
+        begin
+          WB_enable = 1;
+          alu_exe_cmd = 4'b0110;
+        end
+        ORR: 
+        begin
+          WB_enable = 1;
+          alu_exe_cmd = 4'b0111;
+        end
+        EOR: 
+        begin
+          WB_enable = 1;
+          alu_exe_cmd = 4'b1000;
+        end
+        CMP:
+          alu_exe_cmd = 4'b0100;
+        TST:
+          alu_exe_cmd = 4'b0110;
+        endcase
+      end
 
-    2'b10: branch = 1'b1;
+      MEMORY: 
+      begin
+        alu_exe_cmd = 4'b0010;
+        mem_read = S; //LDR
+        WB_enable = S; //LDR
+        mem_write = ~S; //STR
+      end
 
-    2'b00: begin
-      case(opcode)
-      4'b1101: begin  // MOV
-        regWrite = 1;
-        ALU_command = 4'b0001;
-      end
-      4'b1111: begin  // MVN
-        regWrite = 1;
-        ALU_command = 4'b1001;
-      end
-      4'b0100: begin  // ADD
-        regWrite = 1;
-        ALU_command = 4'b0010;
-      end
-      4'b0101: begin  // ADC
-        regWrite = 1;
-        ALU_command = 4'b0011;
-      end
-      4'b0010: begin  // SUB
-        regWrite = 1;
-        ALU_command = 4'b0100;
-      end
-      4'b0110: begin  // SBC
-        regWrite = 1;
-        ALU_command = 4'b0101;
-      end
-      4'b0000: begin  // AND
-        regWrite = 1;
-        ALU_command = 4'b0110;
-      end
-      4'b1100: begin  // ORR
-        regWrite = 1;
-        ALU_command = 4'b0111;
-      end
-      4'b0001: begin  // EOR
-        regWrite = 1;
-        ALU_command = 4'b1000;
-      end
-      4'b1010:   // CMP
-        ALU_command = 4'b0100;
-      4'b1000:   // TST
-        ALU_command = 4'b0110;
-      endcase
-    end
+      BRANCH: branch_enable = 1'b1;
+
     endcase
   end
 
-  assign status_out = branch ? 1'b0 : S;
-  assign controllerOutput = {ALU_command, memRead, memWrite, regWrite, branch, status_out};
-  assign one_input = ~((ALU_command == 4'b0001) || (ALU_command == 4'b1001) || branch);
+  assign status_out = branch_enable ? 1'b0 : S;
+  assign controllerOutput = {alu_exe_cmd, mem_read, mem_write, WB_enable, branch_enable, status_out};
+  assign one_input = ~((alu_exe_cmd == 4'b0001) || (alu_exe_cmd == 4'b1001) || branch_enable);
   
 endmodule

@@ -1,15 +1,27 @@
 `timescale 1ns/1ns
-
 module Register_File(
-    input clk, rst,
-    input reg_write,
-    input [3:0] src1, src2,
-    input [3:0] reg_dest,
-    input [31:0] data,
-    output [31:0] reg1, reg2
+  clk, 
+  rst,
+  reg_write,
+  src1, 
+  src2,
+  reg_dest,
+  data,
+  reg1, 
+  reg2
 );
+  parameter count = 15;
+  parameter size = 4;
+  parameter len = 32;
 
-  reg [31:0] registers [0:14];
+  input clk, rst;
+  input reg_write;
+  input [size-1 : 0] src1, src2;
+  input [size-1 : 0] reg_dest;
+  input [len-1 : 0] data;
+  output [len-1 : 0] reg1, reg2;
+
+  reg [len-1 : 0] registers [0 : count-1];
   
   assign reg1 = registers[src1];
   assign reg2 = registers[src2];
@@ -25,4 +37,5 @@ module Register_File(
           registers[reg_dest] <= data;
     end
   end
+  
 endmodule
