@@ -12,6 +12,7 @@ module ARM(
   wire regWrite_MEM, memRead_MEM, memWrite_MEM, memRead_WB;
 
   wire [1 : 0] sel_src1, sel_src2;
+  wire [3 : 0] src1_reg, src2_reg;
 
   wire [3 : 0] WB_destination, destReg_ID, destReg_EXEC, destReg_MEM, first_input, second_input;
   wire [3 : 0] statusRegs, ALU_statusBits, EXE_command_ID, EXE_command_EXEC;
@@ -89,6 +90,10 @@ module ARM(
     .Val_Rn_in(Val_Rn_ID), 
     .Val_Rm_in(Val_Rm_ID), 
     .instruction_in(Inst_ID),
+    .first_input(first_input), 
+    .second_input(second_input),
+    .src1_reg(src1_reg), 
+    .src2_reg(src2_reg),
     .WB_en_out(regWrite_EXEC), 
     .mem_write_out(memWrite_EXEC), 
     .mem_read_out(memRead_EXEC), 

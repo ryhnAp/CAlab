@@ -11,7 +11,7 @@ module Hazard_Unit(
     Mem_Dest,
     hazard_Detected
 );
-    input forward_en, Exe_WB_EN, Mem_WB_EN, Two_src, EXE_MEM_R_EN;
+    input forward_en, Exe_WB_EN, Mem_WB_EN, Two_src, EXE_MEM_R_EN;//Exe_WB_EN:after mem, EXE_MEM_R_EN:befor mem, 
     input[3:0] src1, src2, Exe_Dest, Mem_Dest;
     output reg hazard_Detected;
 
