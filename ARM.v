@@ -10,8 +10,6 @@ module ARM(
   wire memRead_EXEC, memWrite_EXEC, regWrite_EXEC, s_EXEC, ALU_carry_in, immediate_EXEC;
   wire regWrite_MEM, memRead_MEM, memWrite_MEM, memRead_WB;
 
-  wire [1:0] sel_src1, sel_src2;
-
   wire [3:0] WB_destination, destReg_ID, destReg_EXEC, destReg_MEM, first_input, second_input;
   wire [3:0] statusRegs, ALU_statusBits, EXE_command_ID, EXE_command_EXEC;
 
