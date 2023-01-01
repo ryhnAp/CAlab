@@ -1,26 +1,29 @@
 `timescale 1ns/1ns
 module ARM(
   clk, 
-  rst
+  rst,
+  forward_en
 );
-  input clk, rst;
+  input clk, rst, forward_en;
 
   wire branch, hazard, one_input, two_input;
   wire regWrite, memRead_ID, memWrite_ID, regWrite_ID, branch_ID, s_ID ,immediate_ID;
   wire memRead_EXEC, memWrite_EXEC, regWrite_EXEC, s_EXEC, ALU_carry_in, immediate_EXEC;
   wire regWrite_MEM, memRead_MEM, memWrite_MEM, memRead_WB;
 
-  wire [3:0] WB_destination, destReg_ID, destReg_EXEC, destReg_MEM, first_input, second_input;
-  wire [3:0] statusRegs, ALU_statusBits, EXE_command_ID, EXE_command_EXEC;
+  wire [1 : 0] sel_src1, sel_src2;
 
-  wire [11:0] shift_operand_ID, shift_operand_EXEC;
+  wire [3 : 0] WB_destination, destReg_ID, destReg_EXEC, destReg_MEM, first_input, second_input;
+  wire [3 : 0] statusRegs, ALU_statusBits, EXE_command_ID, EXE_command_EXEC;
 
-  wire [23:0] s_imm_ID, s_imm_EXEC;
+  wire [11 : 0] shift_operand_ID, shift_operand_EXEC;
+
+  wire [23 : 0] s_imm_ID, s_imm_EXEC;
   
-  wire [31:0] WB_data, Val_Rn_ID, Val_Rm_ID, Val_Rn_EXEC, Val_Rm_EXEC, Val_Rm_MEM, ALU_result_EXEC, ALU_result_MEM;
-  wire [31:0] memory_result_MEM, memory_result_WB, ALU_result_WB;
-  wire [31:0] Instruction, Inst_ID, Inst_EXEC, Inst_MEM, Inst_WB, branch_address, PC, PC_ID, PC_EXEC, PC_MEM, PC_WB; 
-  wire [31:0] ID_Val_Rm_EXEC;
+  wire [31 : 0] WB_data, Val_Rn_ID, Val_Rm_ID, Val_Rn_EXEC, Val_Rm_EXEC, Val_Rm_MEM, ALU_result_EXEC, ALU_result_MEM;
+  wire [31 : 0] memory_result_MEM, memory_result_WB, ALU_result_WB;
+  wire [31 : 0] Instruction, Inst_ID, Inst_EXEC, Inst_MEM, Inst_WB, branch_address, PC, PC_ID, PC_EXEC, PC_MEM, PC_WB; 
+  wire [31 : 0] ID_Val_Rm_EXEC;
   
   IF_Stage if_s(
     .clk(clk), 
@@ -115,11 +118,16 @@ module ARM(
     .MEM_R_EN(memRead_EXEC), 
     .MEM_W_EN(memWrite_EXEC), 
     .imm(immediate_EXEC), 
-    .SR(ALU_carry_in),.PC(PC_EXEC), 
+    .SR(ALU_carry_in),
+    .PC(PC_EXEC), 
     .Val_Rn(Val_Rn_EXEC), 
     .Val_Rm(Val_Rm_EXEC), 
     .shift_operand(shift_operand_EXEC), 
     .Signed_imm_24(s_imm_EXEC), 
+    .ALU_MEM_Val(ALU_result_MEM), 
+    .WB_Val(WB_data),
+    .Sel_src1(sel_src1), 
+    .Sel_src2(sel_src2), 
     .ALU_result(ALU_result_EXEC), 
     .Br_addr(branch_address), 
     .status(ALU_statusBits), 
@@ -178,6 +186,7 @@ module ARM(
     .out_result(WB_data));
   
   Hazard_Unit hazard_unit(
+    .forward_en(forward_en),
     .Exe_WB_EN(regWrite_EXEC), 
     .Mem_WB_EN(regWrite_MEM), 
     .Two_src(two_input), 
@@ -187,5 +196,16 @@ module ARM(
     .Exe_Dest(destReg_EXEC), 
     .Mem_Dest(destReg_MEM),
     .hazard_Detected(hazard));
+
+  Forwarding_Unit forwarding_unit(
+    .MEM_wb_en(regWrite_MEM), 
+    .WB_wb_en(regWrite), 
+    .Forward_en(forward_en), 
+    .src1(src1_reg), 
+    .src2(src2_reg), 
+    .MEM_dst(destReg_MEM), 
+    .WB_dst(WB_destination), 
+    .sel_src1(sel_src1), 
+    .sel_src2(sel_src2));
 
 endmodule
