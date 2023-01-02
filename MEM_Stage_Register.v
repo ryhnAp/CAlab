@@ -2,7 +2,6 @@
 module MEM_Stage_Register(
   clk, 
   rst, 
-  freeze,
   WB_en_in, 
   MEM_R_en_in, 
   ALU_result_in, 
@@ -18,7 +17,7 @@ module MEM_Stage_Register(
   Instruction,
   Dest
 );
-  input clk, rst, freeze, WB_en_in, MEM_R_en_in;
+  input clk, rst, WB_en_in, MEM_R_en_in;
   input [31 : 0] ALU_result_in, MEM_read_value_in, PC_in, Instruction_in;
   input [3 : 0] Dest_in;
   output reg WB_en, MEM_R_en;
@@ -35,7 +34,7 @@ module MEM_Stage_Register(
       MEM_R_en <= 1'd0;
       Dest <= 4'd0;
     end
-    else if (~freeze) begin
+    else begin
       PC <= PC_in;
       Instruction <= Instruction_in;
       MEM_read_value <= MEM_read_value_in;
