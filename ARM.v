@@ -2,11 +2,18 @@
 module ARM(
   clk, 
   rst,
-  forward_en
+  forward_en,
+  SRAM_DQ,
+  SRAM_ADDR,
+  SRAM_WE_N
 );
   input clk, rst, forward_en;
+  inout [15 : 0] SRAM_DQ;
+  output [17 : 0] SRAM_ADDR; 
+  output SRAM_WE_N;
 
-  wire branch, hazard, one_input, two_input;
+  wire branch, hazard, one_input, two_input, freeze, sram_ready;
+
   wire regWrite, memRead_ID, memWrite_ID, regWrite_ID, branch_ID, s_ID ,immediate_ID;
   wire memRead_EXEC, memWrite_EXEC, regWrite_EXEC, s_EXEC, ALU_carry_in, immediate_EXEC;
   wire regWrite_MEM, memRead_MEM, memWrite_MEM, memRead_WB;
@@ -24,12 +31,12 @@ module ARM(
   wire [31 : 0] WB_data, Val_Rn_ID, Val_Rm_ID, Val_Rn_EXEC, Val_Rm_EXEC, Val_Rm_MEM, ALU_result_EXEC, ALU_result_MEM;
   wire [31 : 0] memory_result_MEM, memory_result_WB, ALU_result_WB;
   wire [31 : 0] Instruction, Inst_ID, Inst_EXEC, Inst_MEM, Inst_WB, branch_address, PC, PC_ID, PC_EXEC, PC_MEM, PC_WB; 
-  wire [31 : 0] ID_Val_Rm_EXEC;
-  
+  wire [31 : 0] ID_Val_Rm_EXEC;  
+
   IF_Stage if_s(
     .clk(clk), 
     .rst(rst), 
-    .freeze(hazard), 
+    .freeze(freeze), 
     .branch_taken(branch), 
     .branch_address(branch_address), 
     .PC(PC), 
@@ -38,7 +45,7 @@ module ARM(
   IF_Stage_Register if_s_r(
     .clk(clk), 
     .rst(rst), 
-    .freeze(hazard), 
+    .freeze(freeze), 
     .flush(branch),
     .pc_in(PC), 
     .instruction_in(Instruction),
@@ -75,6 +82,7 @@ module ARM(
     .clk(clk), 
     .rst(rst), 
     .flush(branch),
+    .freeze(~sram_ready),
     .WB_en_in(regWrite_ID), 
     .mem_write_in(memWrite_ID), 
     .mem_read_in(memRead_ID), 
@@ -141,6 +149,7 @@ module ARM(
   EXE_Stage_Register exe_s_r(
     .clk(clk), 
     .rst(rst), 
+    .freeze(~sram_ready),
     .WB_en_in(regWrite_EXEC), 
     .MEM_R_EN_in(memRead_EXEC), 
     .MEM_W_EN_in(memWrite_EXEC), 
@@ -158,19 +167,36 @@ module ARM(
     .Instruction(Inst_MEM), 
     .Dest(destReg_MEM));
 
-  MEM_Stage mem_s(
+  // MEM_Stage mem_s(
+  //   .clk(clk), 
+  //   .MEMread(memRead_MEM), 
+  //   .MEMwrite(memWrite_MEM), 
+  //   .address(ALU_result_MEM), 
+  //   .data(Val_Rm_MEM), 
+  //   .MEM_result(memory_result_MEM));
+  SRAM_Controller sram_c(
     .clk(clk), 
-    .MEMread(memRead_MEM), 
-    .MEMwrite(memWrite_MEM), 
+    .rst(rst),
+    .write_en(memWrite_MEM), 
+    .read_en(memRead_MEM),
     .address(ALU_result_MEM), 
-    .data(Val_Rm_MEM), 
-    .MEM_result(memory_result_MEM));
+    .writeData(Val_Rm_MEM),
+    .read_data(memory_result_MEM),
+    .ready(sram_ready),
+    .SRAM_DQ(SRAM_DQ),
+    .SRAM_ADDR(SRAM_ADDR),
+    .SRAM_UB_N(SRAM_UB_N),
+    .SRAM_LB_N(SRAM_LB_N),
+    .SRAM_WE_N(SRAM_WE_N),
+    .SRAM_CE_N(SRAM_CE_N),
+    .SRAM_OE_N(SRAM_OE_N));
 
   MEM_Stage_Register mem_s_r(
     .clk(clk), 
     .rst(rst), 
+    .freeze(~sram_ready),
     .WB_en_in(regWrite_MEM), 
-    .MEM_R_en_in(memRead_MEM), 
+    .MEM_R_en_in(memRead_MEM&sram_ready), 
     .ALU_result_in(ALU_result_MEM), 
     .MEM_read_value_in(memory_result_MEM), 
     .PC_in(PC_MEM), 
@@ -212,5 +238,7 @@ module ARM(
     .WB_dst(WB_destination), 
     .sel_src1(sel_src1), 
     .sel_src2(sel_src2));
+
+  assign freeze = ~sram_ready | hazard;
 
 endmodule

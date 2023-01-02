@@ -3,6 +3,7 @@ module ID_Stage_Register(
   clk, 
   rst, 
   flush,
+  freeze,
   mem_write_in, 
   mem_read_in, 
   WB_en_in, 
@@ -38,7 +39,7 @@ module ID_Stage_Register(
   carry_bit_out,
   instruction_out
 );
-  input clk, rst, flush;
+  input clk, rst, flush, freeze;
   input WB_en_in, mem_write_in, mem_read_in;
   input imm_in, branch_in, s_in, carry_bit_in;
   input[3:0] EXE_cmd_in, dest_in, first_input, second_input;
@@ -62,7 +63,7 @@ module ID_Stage_Register(
       signed_imm_out <= 24'd0;
       {pc_out, Val_Rn_out, Val_Rm_out, instruction_out} <= 128'd0;
     end
-    else begin
+    else if (~freeze)begin
         WB_en_out <= WB_en_in; 
         mem_write_out <= mem_write_in;
         mem_read_out <= mem_read_in;
