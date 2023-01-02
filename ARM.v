@@ -1,10 +1,9 @@
 `timescale 1ns/1ns
 module ARM(
   clk, 
-  rst,
-  forward_en
+  rst
 );
-  input clk, rst, forward_en;
+  input clk, rst;
 
   wire branch, hazard, one_input, two_input;
 
@@ -14,10 +13,8 @@ module ARM(
     is_reg_write_MEM, mem_read_MEM, mem_write_MEM,
     mem_read_WB;
 
-  wire [1 : 0] sel_src1, sel_src2 ;
-
   wire [3 : 0] destination_WB, status_reg,
-          EXE_command_ID, register_destination_ID, first_input, second_input, src1_reg, src2_reg, 
+          EXE_command_ID, register_destination_ID, first_input, second_input,
             EXE_command_EXE, register_destination_EXE,
           status_reg_ALU, register_destination_MEM;
 
@@ -29,7 +26,7 @@ module ARM(
           data_WB, val_Rn_ID, val_Rm_ID, PC_EXE, val_Rn_EXE, val_Rm_EXE, inst_EXE,
           ALU_result_EXE, branch_address, val_Rm_EXE_out, ALU_result_MEM, val_Rm_MEM, PC_MEM, inst_MEM,
           memory_result_MEM, PC_WB, inst_WB,
-          memory_result_WB, ALU_result_WB;    
+          memory_result_WB, ALU_result_WB;  
   
   IF_Stage if_s(
     .clk(clk), 
@@ -95,10 +92,6 @@ module ARM(
     .Val_Rn_in(val_Rn_ID), 
     .Val_Rm_in(val_Rm_ID), 
     .instruction_in(inst_ID),
-    .first_input(first_input), 
-    .second_input(second_input),
-    .src1_reg(src1_reg), 
-    .src2_reg(src2_reg),
     .WB_en_out(is_reg_write_EXE), 
     .mem_write_out(mem_write_EXE), 
     .mem_read_out(mem_read_EXE), 
@@ -134,10 +127,6 @@ module ARM(
     .Val_Rm(val_Rm_EXE), 
     .shift_operand(shift_operand_EXE), 
     .Signed_imm_24(s_imm_EXE), 
-    .ALU_MEM_Val(ALU_result_MEM), 
-    .WB_Val(data_WB),
-    .Sel_src1(sel_src1), 
-    .Sel_src2(sel_src2), 
     .ALU_result(ALU_result_EXE), 
     .Br_addr(branch_address), 
     .status(status_reg_ALU), 
@@ -196,7 +185,6 @@ module ARM(
     .out_result(data_WB));
   
   Hazard_Unit hazard_unit(
-    .forward_en(forward_en),
     .Exe_WB_EN(is_reg_write_EXE), 
     .Mem_WB_EN(is_reg_write_MEM), 
     .Two_src(two_input), 
@@ -206,16 +194,5 @@ module ARM(
     .Exe_Dest(register_destination_EXE), 
     .Mem_Dest(register_destination_MEM),
     .hazard_Detected(hazard));
-
-  Forwarding_Unit forwarding_unit(
-    .MEM_wb_en(is_reg_write_MEM), 
-    .WB_wb_en(is_reg_write), 
-    .Forward_en(forward_en), 
-    .src1(src1_reg), 
-    .src2(src2_reg), 
-    .MEM_dst(register_destination_MEM), 
-    .WB_dst(destination_WB), 
-    .sel_src1(sel_src1), 
-    .sel_src2(sel_src2));
 
 endmodule

@@ -18,10 +18,7 @@ module ID_Stage_Register(
   dest_in,
   carry_bit_in,
   instruction_in,
-  first_input, 
-  second_input,
-  src1_reg, 
-  src2_reg,
+  
   WB_en_out, 
   mem_read_out, 
   mem_write_out, 
@@ -41,14 +38,14 @@ module ID_Stage_Register(
   input clk, rst, flush;
   input WB_en_in, mem_write_in, mem_read_in;
   input imm_in, branch_in, s_in, carry_bit_in;
-  input[3:0] EXE_cmd_in, dest_in, first_input, second_input;
+  input[3:0] EXE_cmd_in, dest_in;
   input[11:0] shift_operand_in;
   input[23:0] signed_imm_in;
   input[31:0] pc_in, Val_Rn_in, Val_Rm_in, instruction_in;
 
   output reg WB_en_out, mem_write_out, mem_read_out;
   output reg imm_out, branch_out, s_out, carry_bit_out;
-  output reg[3:0] src1_reg, src2_reg, EXE_cmd_out, dest_out;
+  output reg[3:0] EXE_cmd_out, dest_out;
   output reg[11:0] shift_operand_out;
   output reg[23:0] signed_imm_out;
   output reg[31:0] pc_out, Val_Rn_out, Val_Rm_out, instruction_out;
@@ -78,8 +75,6 @@ module ID_Stage_Register(
         Val_Rm_out <= Val_Rm_in;
         instruction_out <= instruction_in;
         carry_bit_out <= carry_bit_in;
-        src1_reg <= first_input;
-        src2_reg <= second_input;
     end
   end
 endmodule
