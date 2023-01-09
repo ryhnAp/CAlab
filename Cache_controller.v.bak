@@ -1,0 +1,80 @@
+`timescale 1ns / 1ns 
+
+module cache_controller (input clk,rst, mem_write_en,mem_read_en, SRAM_ready, cache_hit,
+    input[31:0] address, write_data,cache_read_data,input [63:0] SRAM_read_data,
+    output ready, cache_write_en, cache_read_en, SRAM_write_en, SRAM_read_en,invalid,
+    output [16:0] cache_address, output [31:0] SRAM_address, SRAM_write_data, read_data, output [63:0] cache_write_data );
+
+    reg [1:0] ps,ns ;
+    parameter IDLE = 2'b00 , MISS = 2'b01 , WRITE = 2'b10;
+
+    wire [31:0] real_addr;
+
+    assign real_addr  = {address[31:2], 2'b00} - 32'd1024;
+    assign cache_address = real_addr[18:2];
+    assign SRAM_address  = address;
+
+    assign SRAM_write_en = (ps == WRITE);
+    assign SRAM_read_en = (ps == MISS);
+    assign cache_read_en = (ps == IDLE) && mem_read_en;
+    assign cache_write_en = (ps == MISS && SRAM_ready);
+    assign SRAM_Write_Data  = SRAM_write_en ? write_data : 32'b0;
+    assign cache_write_data = ((ps == WRITE) && SRAM_ready) ? SRAM_read_data : 64'b0;
+    assign invalid = (ps == IDLE) && mem_write_en;
+    assign ready = (ns == IDLE); //?
+
+    always @(posedge clk, posedge rst) begin
+        if (rst)
+            ps <= IDLE;
+        else
+            ps <= ns;
+    end
+    
+
+    always @(*)
+    begin
+        case (ps)
+            IDLE: begin
+            if (mem_read_en && ~cache_hit)
+                ns = MISS;
+            else if (mem_write_en)
+                ns = WRITE;
+            else
+                ns = IDLE; 
+            end
+
+            MISS: begin
+                if (SRAM_ready)
+                    ns = IDLE;
+                else
+                    ns = MISS;
+            end
+
+            WRITE: begin
+                if (SRAM_ready)
+                    ns = IDLE;
+                else
+                    ns = WRITE;
+            end
+        endcase
+    end
+
+    always @(*) begin
+
+        read_data <= 32'b0;
+
+        if (ps == IDLE && cache_hit)
+
+            read_data <= cache_read_data;
+
+        else 
+            if (ps == MISS && SRAM_ready) begin
+        
+                read_data <= cache_address[0] ? SRAM_read_data[63:32] : SRAM_read_data[31:0];
+
+            end
+    end
+
+
+
+endmodule 

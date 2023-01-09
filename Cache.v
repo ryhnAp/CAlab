@@ -1,0 +1,89 @@
+`timescale 1ns/1ns
+module cache(input clk,rst,cache_write_en, cache_read_en, invalid, input[16:0] address ,input[63:0] write_data,output hit,
+    output [31:0] read_data );
+
+    wire [9:0] tag;
+    wire [5:0] index;
+    wire offset;
+
+    assign {tag,index,offset} = address ;
+
+    reg [31:0] data_0 [0:63][0:1];
+    reg [31:0] data_1 [0:63][0:1];
+
+    reg [9:0]  tag_0  [0:63];
+    reg [9:0]  tag_1  [0:63];
+
+    reg valid_0 [0:63];
+    reg valid_1 [0:63];
+
+    reg LRU [0:63];
+
+    wire set_0_hit, set_1_hit;
+
+    assign set_0_hit = (tag==tag_0[index]) & valid_0[index];
+    assign set_1_hit = (tag == tag_1[index]) & valid_1[index];
+
+    assign hit = set_0_hit || set_1_hit;
+
+   // mux2to1 mux_read_data(.a(data_0[index][offset]),.b(data_1[index][offset]),.sel_a(set_0_hit),.sel_b(set_1_hit),.out(read_data));
+    assign read_data = set_0_hit ? data_0[index][offset] : (set_1_hit ? data_1[index][offset] : 32'b0);
+
+    integer i;
+    always @(posedge clk, posedge rst) begin
+        if (rst) begin
+				  for (i = 0; i < 64; i = i + 1) begin
+		
+					   tag_0 [i] <= 10'b0;
+					   tag_1 [i] <= 10'b0;
+
+                       data_0 [i][0] <= 32'b0;
+					   data_0 [i][1] <= 32'b0;
+					   data_1 [i][0] <= 32'b0;
+					   data_1 [i][1] <= 32'b0;
+
+					   valid_0 [i] <= 1'b0;
+					   valid_1 [i] <= 1'b0;
+
+					   LRU [i] <= 1'b0;
+					end
+        end
+
+        else if(cache_read_en) begin
+
+            if(set_0_hit) begin
+                LRU[index] = 1'b0;
+            end
+            else 
+                if(set_1_hit) begin 
+                    LRU[index] = 1'b1;
+                end
+            else 
+                if (cache_write_en) begin
+                    if(LRU[index]) begin
+                        data_0[index][0] <= write_data[31:0];
+                        data_0[index][1] <= write_data[63:32];
+                        tag_0[index] <= tag;
+                        valid_0[index] <= 1'b1;
+                    end
+                    else begin
+                        data_1[index][0] <= write_data[31:0];
+                        data_1[index][1] <= write_data[63:32];
+                        tag_1[index] <= tag;
+                        valid_1[index] <= 1'b1;
+                    end
+                end
+            end
+        if (invalid) begin
+            if(set_0_hit) begin
+                valid_0[index] = 1'b0;
+                LRU[index] = 1'b1;
+            end
+            else 
+                if(set_1_hit) begin
+                    valid_1[index] = 1'b0;
+                    LRU[index] = 1'b0;
+                end
+        end
+    end
+endmodule
